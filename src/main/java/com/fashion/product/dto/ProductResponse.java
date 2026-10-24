@@ -1,0 +1,105 @@
+package com.fashion.product.dto;
+
+import com.fashion.product.entity.Product;
+import java.math.BigDecimal;
+import java.util.List;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Builder
+public class ProductResponse {
+    private Long id;
+    private String name;
+    private String slug;
+    private String shortDescription;
+    private String description;
+    private BigDecimal basePrice;
+    private BigDecimal salePrice;
+    private String material;
+    private String fit;
+    private String gender;
+    private String status;
+    private Boolean isFeatured;
+    private Boolean isNew;
+    private Long brandId;
+    private String brandName;
+    private Long categoryId;
+    private String categoryName;
+    private String primaryImageUrl;
+    private List<String> imageUrls;
+    private List<String> sizes;
+    private List<String> colors;
+    private Integer totalStock;
+    @lombok.Setter
+    private Double averageRating;
+    @lombok.Setter
+    private Long totalReviews;
+
+    public static ProductResponse fromEntity(Product product) {
+        return fromEntity(product, null);
+    }
+
+    public static ProductResponse fromEntity(Product product, String primaryImageUrl) {
+        return fromEntity(product, primaryImageUrl, primaryImageUrl == null ? List.of() : List.of(primaryImageUrl));
+    }
+
+    public static ProductResponse fromEntity(Product product, String primaryImageUrl, List<String> imageUrls) {
+        return ProductResponse.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .slug(product.getSlug())
+                .shortDescription(product.getShortDescription())
+                .description(product.getDescription())
+                .basePrice(product.getBasePrice())
+                .salePrice(product.getSalePrice())
+                .material(product.getMaterial())
+                .fit(product.getFit())
+                .gender(product.getGender())
+                .status(product.getStatus())
+                .isFeatured(product.getIsFeatured())
+                .isNew(product.getIsNew())
+                .brandId(product.getBrand() == null ? null : product.getBrand().getId())
+                .brandName(product.getBrandName())
+                .categoryId(product.getCategory() == null ? null : product.getCategory().getId())
+                .categoryName(product.getCategory() == null ? null : product.getCategory().getName())
+                .primaryImageUrl(primaryImageUrl)
+                .imageUrls(imageUrls == null ? List.of() : imageUrls)
+                .sizes(product.getVariants() == null ? List.of() : product.getVariants().stream()
+                        .filter(variant -> Boolean.TRUE.equals(variant.getIsActive()))
+                        .map(variant -> variant.getSize()).filter(java.util.Objects::nonNull).distinct().toList())
+                .colors(product.getVariants() == null ? List.of() : product.getVariants().stream()
+                        .filter(variant -> Boolean.TRUE.equals(variant.getIsActive()))
+                        .map(variant -> variant.getColor()).filter(java.util.Objects::nonNull).distinct().toList())
+                .totalStock(product.getAvailableQuantity())
+                .build();
+    }
+
+    ProductResponse(final Long id, final String name, final String slug, final String shortDescription, final String description, final BigDecimal basePrice, final BigDecimal salePrice, final String material, final String fit, final String gender, final String status, final Boolean isFeatured, final Boolean isNew, final Long brandId, final String brandName, final Long categoryId, final String categoryName, final String primaryImageUrl, final List<String> imageUrls, final List<String> sizes, final List<String> colors, final Integer totalStock, final Double averageRating, final Long totalReviews) {
+        this.id = id;
+        this.name = name;
+        this.slug = slug;
+        this.shortDescription = shortDescription;
+        this.description = description;
+        this.basePrice = basePrice;
+        this.salePrice = salePrice;
+        this.material = material;
+        this.fit = fit;
+        this.gender = gender;
+        this.status = status;
+        this.isFeatured = isFeatured;
+        this.isNew = isNew;
+        this.brandId = brandId;
+        this.brandName = brandName;
+        this.categoryId = categoryId;
+        this.categoryName = categoryName;
+        this.primaryImageUrl = primaryImageUrl;
+        this.imageUrls = imageUrls;
+        this.sizes = sizes;
+        this.colors = colors;
+        this.totalStock = totalStock;
+        this.averageRating = averageRating;
+        this.totalReviews = totalReviews;
+    }
+}
