@@ -72,3 +72,18 @@ hs_err_pid*.log
 
 # Frontend build output
 /frontend/dist/
+@'
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Python cache and database backups
+database/__pycache__/
+database/backups/
+
+# Frontend dependencies and local builds
+frontend/node_modules/
+frontend/dist/
+'@ | Add-Content .gitignore
