@@ -1,0 +1,58 @@
+import { useState } from 'react'
+import { AuthLayout } from '../../layouts/AuthLayout'
+import { useAuth } from '../../hooks/useAuth'
+import { ROUTES } from '../../utils/constants'
+
+export function LoginPage({ setNotice, setRoute }) {
+  const { login } = useAuth()
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [feedback, setFeedback] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem('fashion:auth-feedback')
+      sessionStorage.removeItem('fashion:auth-feedback')
+      return stored ? JSON.parse(stored) : null
+    } catch {
+      return null
+    }
+  })
+
+  async function submit(event) {
+    event.preventDefault()
+    if (!form.email.trim() || !form.password) {
+      setFeedback({ type: 'error', message: 'Vui l\u00f2ng nh\u1eadp email v\u00e0 m\u1eadt kh\u1ea9u.' })
+      return
+    }
+    setFeedback(null)
+    setIsSubmitting(true)
+    try {
+      const auth = await login(form)
+      setNotice(`Đăng nhập thành công: ${auth.email} (${auth.role}).`)
+      const returnRoute = sessionStorage.getItem('fashion:wishlist-return-route')
+      sessionStorage.removeItem('fashion:wishlist-return-route')
+      setRoute(auth.role === 'ADMIN' ? ROUTES.ADMIN_DASHBOARD : returnRoute || ROUTES.HOME)
+    } catch (error) {
+      setFeedback({ type: 'error', message: `\u0110\u0103ng nh\u1eadp th\u1ea5t b\u1ea1i: ${error.message}` })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <AuthLayout title={<>Đăng nhập<br /><em>tài khoản</em></>} active={ROUTES.LOGIN} setRoute={setRoute}>
+      {feedback && <p className={`auth-feedback ${feedback.type}`} role={feedback.type === 'error' ? 'alert' : 'status'} aria-live={feedback.type === 'error' ? 'assertive' : 'polite'}>{feedback.message}</p>}
+      <form className="form-grid auth-form" onSubmit={submit}>
+        <label>Email<input autoComplete="email" placeholder="tên@email.com" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
+        <label>Mật khẩu
+          <span className="password-field"><input autoComplete="current-password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} /><button type="button" className="password-toggle" aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowPassword(!showPassword)}>{showPassword ? 'Ẩn' : 'Hiện'}</button></span>
+        </label>
+        <div className="auth-options"><label className="checkbox-label"><input type="checkbox" /> Ghi nhớ đăng nhập</label></div>
+        <div className="auth-register-hint"><button type="button" className="text-button" onClick={() => setRoute(ROUTES.FORGOT_PASSWORD)}>Quên mật khẩu?</button></div>
+        <div className="auth-actions"><button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}</button></div>
+        <div className="auth-register-hint">Chưa có tài khoản? <button type="button" className="text-button" onClick={() => setRoute(ROUTES.REGISTER)}>Đăng ký ngay →</button>
+        </div>
+      </form>
+    </AuthLayout>
+  )
+}

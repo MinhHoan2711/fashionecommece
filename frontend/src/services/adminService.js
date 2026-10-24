@@ -1,0 +1,105 @@
+import { apiRequest, pageContent } from './api'
+import { repairProduct } from '../utils/repairCatalogText'
+import { repairOrder } from './orderService'
+
+export function getDashboard() {
+  return apiRequest('/api/admin/dashboard')
+}
+
+export async function getAdminProducts({ page = 0, size = 100 } = {}) {
+  return pageContent(await apiRequest(`/api/admin/products?page=${page}&size=${size}`)).map(repairProduct)
+}
+
+export async function getAdminInventoryProducts({ page = 0, size = 100 } = {}) {
+  return pageContent(await apiRequest(`/api/admin/products/inventory?page=${page}&size=${size}`))
+}
+
+export function createAdminProduct(payload) {
+  return apiRequest('/api/admin/products', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateAdminProduct(productId, payload) {
+  return apiRequest(`/api/admin/products/${productId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function uploadAdminProductImage(file) {
+  const body = new FormData()
+  body.append('file', file)
+  return apiRequest('/api/admin/products/images', { method: 'POST', body })
+}
+
+export function deleteAdminProduct(productId) {
+  return apiRequest(`/api/admin/products/${productId}`, { method: 'DELETE' })
+}
+
+export async function getAdminOrders({ page = 0, size = 100 } = {}) {
+  return pageContent(await apiRequest(`/api/admin/orders?page=${page}&size=${size}`)).map(repairOrder)
+}
+
+export async function getAdminOrdersByStatus(status, { page = 0, size = 100 } = {}) {
+  return pageContent(await apiRequest(`/api/admin/orders/status/${status}?page=${page}&size=${size}`)).map(repairOrder)
+}
+
+export function getAdminOrder(orderId) {
+  return apiRequest(`/api/admin/orders/${orderId}`).then(repairOrder)
+}
+
+export function updateAdminOrderStatus(orderId, orderStatus) {
+  return apiRequest(`/api/admin/orders/${orderId}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ orderStatus }),
+  })
+}
+
+export function getAdminReturnRequests() {
+  return apiRequest('/api/admin/return-requests')
+}
+
+export function reviewReturnRequest(id, status, adminNote = '') {
+  return apiRequest(`/api/admin/return-requests/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, adminNote }),
+  })
+}
+
+export function getCustomers() {
+  return apiRequest('/api/admin/customers')
+}
+
+export function lockCustomer(id) {
+  return apiRequest(`/api/admin/customers/${id}/lock`, { method: 'PUT' })
+}
+
+export function unlockCustomer(id) {
+  return apiRequest(`/api/admin/customers/${id}/unlock`, { method: 'PUT' })
+}
+
+export function getAdminProductVariants(productId) {
+  return apiRequest(`/api/admin/products/${productId}/variants`)
+}
+
+export function createAdminProductVariant(productId, payload) {
+  return apiRequest(`/api/admin/products/${productId}/variants`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateAdminProductVariant(variantId, payload) {
+  return apiRequest(`/api/admin/products/variants/${variantId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteAdminProductVariant(variantId) {
+  return apiRequest(`/api/admin/products/variants/${variantId}`, {
+    method: 'DELETE',
+  })
+}

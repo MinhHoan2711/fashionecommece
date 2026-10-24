@@ -1,0 +1,97 @@
+[
+  {
+    "seedKey": "ao-thun-basic-primary",
+    "datasetId": "29787",
+    "sourceName": "Basics Men White T-shirt",
+    "articleType": "Tshirts",
+    "color": "White",
+    "gender": "Men",
+    "localImage": "/assets/products/seed-catalog/tshirts-white-basics-men-white-t-shirt-29787.jpg",
+    "sha256": "1c0e17f17b9f510a75b1818b419ad644f001dce84bdda90e4e5e6405090270dd"
+  },
+  {
+    "seedKey": "ao-thun-basic-secondary",
+    "datasetId": "21219",
+    "sourceName": "Basics Men Black T-shirt",
+    "articleType": "Tshirts",
+    "color": "Black",
+    "gender": "Women",
+    "localImage": "/assets/products/seed-catalog/tshirts-black-basics-men-black-t-shirt-21219.jpg",
+    "sha256": "c0b6792b430e704f1b969fcf4c3d2b504f1dc397ded02fe82b059740a0405466"
+  },
+  {
+    "seedKey": "quan-jean-relaxed",
+    "datasetId": "39386",
+    "sourceName": "Peter England Men Party Blue Jeans",
+    "articleType": "Jeans",
+    "color": "Blue",
+    "gender": "Men",
+    "localImage": "/assets/products/seed-catalog/jeans-blue-peter-england-men-party-blue-jeans-39386.jpg",
+    "sha256": "87148f424dd44237abdfe367efc10deb9e2caba3b7c1101c29bc3903b5489226"
+  },
+  {
+    "seedKey": "ao-khoac-bomber",
+    "datasetId": "15322",
+    "sourceName": "Nike Men Solid Black Jacket",
+    "articleType": "Jackets",
+    "color": "Black",
+    "gender": "Men",
+    "localImage": "/assets/products/seed-catalog/jackets-black-nike-men-solid-black-jacket-15322.jpg",
+    "sha256": "7f6781119390348da7c121f930bdec50f6fd0e23c61124b3677c22beb8a78097"
+  },
+  {
+    "seedKey": "dam-midi-linen",
+    "datasetId": "18896",
+    "sourceName": "Arrow Woman Solid Cream Dress",
+    "articleType": "Dresses",
+    "color": "Cream",
+    "gender": "Women",
+    "localImage": "/assets/products/seed-catalog/dresses-cream-arrow-woman-solid-cream-dress-18896.jpg",
+    "sha256": "11cb1e366672e96a6ca2df6abad6c9d4da73d7094ae5c76e47e4efa32920a0cd",
+    "slug": "dam-midi-linen",
+    "brandSlug": "dataset-sample-myntra",
+    "categorySlug": "dam",
+    "variantSkus": ["DML-001-SND-S", "DML-001-SND-M"],
+    "primaryVariantSku": "DML-001-SND-M"
+  },
+  {
+    "seedKey": "ao-khoac-denim-lightwash",
+    "datasetId": "20790",
+    "sourceName": "Basics Men Blue Washed Jacket",
+    "articleType": "Jackets",
+    "color": "Blue",
+    "gender": "Men",
+    "localImage": "/assets/products/seed-catalog/jackets-blue-basics-men-blue-washed-jacket-20790.jpg",
+    "sha256": "950dfa49f959d42678afbf61aedfd35326766b9e612a12f5fd87ecc4697859f0"
+  },
+  {
+    "seedKey": "ao-knit-tank-ivory",
+    "datasetId": "27441",
+    "sourceName": "Jockey Women White Racerback Tank Top",
+    "articleType": "Tops",
+    "color": "White",
+    "gender": "Women",
+    "localImage": "/assets/products/seed-catalog/tops-white-jockey-women-white-racerback-tank-top-27441.jpg",
+    "sha256": "a95539196786e0930e1c36cd5e170aca37b852ef0cbf8851604efb3c14d352b9"
+  },
+  {
+    "seedKey": "tui-mini-crescent",
+    "datasetId": "21946",
+    "sourceName": "Murcia Women Casual Black Handbag",
+    "articleType": "Handbags",
+    "color": "Black",
+    "gender": "Women",
+    "localImage": "/assets/products/seed-catalog/handbags-black-murcia-women-casual-black-handbag-21946.jpg",
+    "sha256": "abaaf53ce90226bb08de4db8cced37d55a402aec69c7a4240fbf9bd44ef6ce6d"
+  },
+  {
+    "seedKey": "sneaker-cloud-runner",
+    "datasetId": "23882",
+    "sourceName": "Fila Men Destiny Grey Sports Shoes",
+    "articleType": "Sports Shoes",
+    "color": "Grey",
+    "gender": "Men",
+    "localImage": "/assets/products/seed-catalog/sports-shoes-grey-fila-men-destiny-grey-sports-shoes-23882.jpg",
+    "sha256": "881dc5daa3909e3e06554e33cec26f7dbe670bee94b0d1f9d8d647551a744573"
+  }
+]

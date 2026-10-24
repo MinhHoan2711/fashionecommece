@@ -1,0 +1,321 @@
+import { useEffect, useMemo, useState } from 'react'
+import { CheckoutForm } from '../../components/cart/CheckoutForm'
+import { useCart } from '../../hooks/useCart'
+import * as orderService from '../../services/orderService'
+import * as paymentService from '../../services/paymentService'
+import * as userService from '../../services/userService'
+import * as voucherService from '../../services/voucherService'
+import { ROUTES } from '../../utils/constants'
+import { validatePhone } from '../../utils/validators'
+
+const FREE_SHIPPING_THRESHOLD = 500000
+const STANDARD_SHIPPING_FEE = 30000
+
+export function CheckoutPage({ setNotice, setRoute }) {
+  const { items, total, itemCount, loadCart } = useCart()
+  const buyNowItem = useMemo(() => readBuyNowItem(), [])
+  const checkoutTotal = buyNowItem
+    ? Number(buyNowItem.price || 0) * Number(buyNowItem.quantity || 1)
+    : total
+  const checkoutItemCount = buyNowItem ? Number(buyNowItem.quantity || 1) : itemCount
+  const [checkout, setCheckout] = useState(() => {
+    let voucher = null
+    try {
+      voucher = JSON.parse(sessionStorage.getItem('fashion:checkoutVoucher') || 'null')
+    } catch {
+      voucher = null
+    }
+    return {
+    contactName: '',
+    contactPhone: '',
+    shippingAddress: '',
+    shippingAddressDetail: '',
+    shippingLat: null,
+    shippingLng: null,
+    paymentMethod: 'COD',
+    shippingFee: STANDARD_SHIPPING_FEE,
+    discountAmount: Number(voucher?.discountAmount || 0),
+    voucherCode: voucher?.code || '',
+    }
+  })
+  const shippingFee = checkoutTotal >= FREE_SHIPPING_THRESHOLD || checkout.voucherCode?.trim().toUpperCase() === 'FREESHIP'
+    ? 0
+    : checkoutTotal > 0 ? STANDARD_SHIPPING_FEE : 0
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [validationError, setValidationError] = useState('')
+  const [voucherMessage, setVoucherMessage] = useState('')
+  const [voucherLoading, setVoucherLoading] = useState(false)
+  const [createdOrder, setCreatedOrder] = useState(null)
+
+  useEffect(() => {
+    if (!checkout.voucherCode || checkoutTotal <= 0) return
+    let cancelled = false
+    voucherService.validateVoucher(checkout.voucherCode, checkoutTotal)
+      .then((result) => {
+        if (cancelled) return
+        if (!result.valid) {
+          setCheckout((current) => ({ ...current, voucherCode: '', discountAmount: 0 }))
+          setVoucherMessage(result.message || 'Voucher không còn áp dụng được.')
+          sessionStorage.removeItem('fashion:checkoutVoucher')
+          return
+        }
+        const discountAmount = Number(result.discountAmount || 0)
+        setCheckout((current) => ({ ...current, voucherCode: result.code || current.voucherCode, discountAmount }))
+        setVoucherMessage(result.message || 'Đã áp dụng voucher.')
+        sessionStorage.setItem('fashion:checkoutVoucher', JSON.stringify({ code: result.code || checkout.voucherCode, discountAmount }))
+      })
+      .catch((error) => {
+        if (cancelled) return
+        setCheckout((current) => ({ ...current, voucherCode: '', discountAmount: 0 }))
+        setVoucherMessage(error.message || 'Không thể xác minh voucher.')
+        sessionStorage.removeItem('fashion:checkoutVoucher')
+      })
+    return () => { cancelled = true }
+  }, [checkoutTotal, checkout.voucherCode])
+
+  useEffect(() => {
+    setCheckout((current) => current.shippingFee === shippingFee ? current : { ...current, shippingFee })
+  }, [shippingFee])
+
+  function showValidationError(message) {
+    setValidationError(message)
+    setNotice?.(message)
+  }
+
+  useEffect(() => {
+    let cancelled = false
+
+    userService.getProfile()
+      .then((profile) => {
+        if (cancelled) return
+        setCheckout((current) => ({
+          ...current,
+          contactName: current.contactName || profile?.fullName || '',
+          contactPhone: current.contactPhone || profile?.phone || '',
+          shippingAddress: current.shippingAddress || profile?.address || '',
+        }))
+      })
+      .catch(() => {
+        if (!cancelled) setNotice?.('Chưa lấy được thông tin hồ sơ để điền sẵn địa chỉ.')
+      })
+      .finally(() => {
+        if (!cancelled) setProfileLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [setNotice])
+
+  async function submitCheckout(event) {
+    event.preventDefault()
+    if (submitting) return
+    if (!checkout.contactName.trim()) {
+      showValidationError('Vui lòng nhập họ tên người nhận.')
+      return
+    }
+    const phoneError = validatePhone(checkout.contactPhone, { required: true })
+    if (phoneError) {
+      showValidationError(phoneError)
+      return
+    }
+    if (!checkout.shippingAddress.trim()) {
+      showValidationError('Vui lòng nhập địa chỉ giao hàng.')
+      return
+    }
+    const shippingAddress = [
+        checkout.contactName,
+        checkout.contactPhone,
+        checkout.shippingAddressDetail.trim(),
+        checkout.shippingAddress,
+      ].map((part) => part.trim()).filter(Boolean).join(' - ')
+    if (shippingAddress.length > 500) {
+      showValidationError('Thông tin người nhận và địa chỉ quá dài. Vui lòng rút gọn còn tối đa 500 ký tự.')
+      return
+    }
+    try {
+      setValidationError('')
+      setSubmitting(true)
+
+      if (checkout.voucherCode) {
+        const voucher = await voucherService.validateVoucher(checkout.voucherCode, checkoutTotal)
+        if (!voucher.valid) {
+          setCheckout((current) => ({ ...current, voucherCode: '', discountAmount: 0 }))
+          sessionStorage.removeItem('fashion:checkoutVoucher')
+          throw new Error(voucher.message || 'Voucher không còn áp dụng được.')
+        }
+      }
+
+      const order = await orderService.checkout({
+        paymentMethod: checkout.paymentMethod,
+        shippingFee: checkout.shippingFee,
+        discountAmount: checkout.discountAmount,
+        voucherCode: checkout.voucherCode,
+        shippingAddress,
+        shippingLat: checkout.shippingLat,
+        shippingLng: checkout.shippingLng,
+        ...(buyNowItem ? {
+          productId: buyNowItem.productId,
+          variantId: buyNowItem.variantId,
+          size: buyNowItem.size,
+          quantity: buyNowItem.quantity,
+        } : {}),
+      })
+
+      await loadCart()
+
+      if (buyNowItem) {
+        sessionStorage.removeItem('fashion:buyNowCheckout')
+      }
+
+      if (checkout.paymentMethod === 'VNPAY') {
+        const payment = await paymentService.createVNPayPayment(order.id)
+        window.location.assign(payment.paymentUrl)
+        return
+      }
+
+      if (checkout.paymentMethod === 'BANK_TRANSFER' || checkout.paymentMethod === 'E_WALLET') {
+        setCreatedOrder(order)
+      } else {
+        setNotice?.(`Đặt hàng #${order.id} thành công.`)
+        setRoute?.(`${ROUTES.ORDER_DETAIL}?id=${order.id}`)
+      }
+    } catch (error) {
+      showValidationError(`Thanh toán chưa thành công: ${error.message}`)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function applyVoucher() {
+    const code = checkout.voucherCode.trim().toUpperCase()
+    if (!code) {
+      setVoucherMessage('Vui lòng nhập mã giảm giá.')
+      return
+    }
+    setVoucherLoading(true)
+    setVoucherMessage('')
+    try {
+      const result = await voucherService.validateVoucher(code, checkoutTotal)
+      if (!result.valid) {
+        setCheckout((current) => ({ ...current, discountAmount: 0 }))
+        setVoucherMessage(result.message || 'Mã giảm giá không hợp lệ.')
+        return
+      }
+      setCheckout((current) => ({
+        ...current,
+        voucherCode: result.code || code.toUpperCase(),
+        discountAmount: Number(result.discountAmount || 0),
+      }))
+      sessionStorage.setItem('fashion:checkoutVoucher', JSON.stringify({
+        code: result.code || code,
+        discountAmount: Number(result.discountAmount || 0),
+        type: (result.code || code).toUpperCase() === 'FREESHIP' ? 'FREESHIP' : '',
+      }))
+      setVoucherMessage(result.message || 'Áp dụng mã giảm giá thành công.')
+    } catch (error) {
+      setCheckout((current) => ({ ...current, discountAmount: 0 }))
+      sessionStorage.removeItem('fashion:checkoutVoucher')
+      setVoucherMessage(error.message || 'Không thể kiểm tra mã giảm giá.')
+    } finally {
+      setVoucherLoading(false)
+    }
+  }
+
+  return createdOrder ? (
+      <PaymentInstructions
+        order={createdOrder}
+        paymentMethod={checkout.paymentMethod}
+        customer={{
+          name: checkout.contactName,
+          phone: checkout.contactPhone,
+          address: [checkout.shippingAddressDetail, checkout.shippingAddress].filter(Boolean).join(', '),
+        }}
+      />
+    ) : <CheckoutForm
+      checkout={checkout}
+      total={checkoutTotal}
+      itemCount={checkoutItemCount}
+      items={buyNowItem ? [] : items}
+      buyNowItem={buyNowItem}
+      profileLoading={profileLoading}
+      submitting={submitting}
+      validationError={validationError}
+      voucherMessage={voucherMessage}
+      voucherLoading={voucherLoading}
+      onChange={(value) => { setCheckout(value); setValidationError('') }}
+      onApplyVoucher={applyVoucher}
+      onSubmit={submitCheckout}
+    />
+}
+
+function PaymentInstructions({ order, paymentMethod, customer }) {
+  const isBankTransfer = paymentMethod === 'BANK_TRANSFER'
+  const bankCode = import.meta.env.VITE_PAYMENT_BANK_CODE || 'VCB'
+  const accountNumber = import.meta.env.VITE_PAYMENT_ACCOUNT_NUMBER || '1035636313'
+  const accountName = import.meta.env.VITE_PAYMENT_ACCOUNT_NAME || 'NGUYEN MANH QUYEN'
+  const bankBranch = import.meta.env.VITE_PAYMENT_BANK_BRANCH || 'PGD Vĩnh Trụ'
+  const transferContent = `DH${order.id}`
+  const qrUrl = isBankTransfer && bankCode && accountNumber
+    ? `https://img.vietqr.io/image/${encodeURIComponent(bankCode)}-${encodeURIComponent(accountNumber)}-qr_only.png?amount=${Math.round(Number(order.finalAmount || 0))}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(accountName || '')}`
+    : ''
+
+  return (
+    <section className="payment-instructions">
+      <div className="payment-instructions-heading">
+        <span className="payment-success-mark" aria-hidden="true">✓</span>
+        <div>
+          <p className="eyebrow">ĐẶT HÀNG THÀNH CÔNG · #{order.id}</p>
+          <h1>{isBankTransfer ? 'Hoàn tất chuyển khoản' : 'Hướng dẫn thanh toán'}</h1>
+          <p>Đơn hàng đã được tạo và đang chờ cửa hàng xác nhận thanh toán.</p>
+        </div>
+      </div>
+
+      <div className="payment-instructions-content">
+        <div className="payment-transfer-panel">
+          <h2>{isBankTransfer ? 'Thông tin chuyển khoản' : 'Thông tin đơn hàng'}</h2>
+          <strong className="payment-instructions-total">{new Intl.NumberFormat('vi-VN').format(Number(order.finalAmount || 0))} ₫</strong>
+      {isBankTransfer ? (
+        <>
+          {qrUrl && <img className="payment-qr-image" src={qrUrl} alt="Mã QR chuyển khoản" onError={(event) => { event.currentTarget.hidden = true }} />}
+          {bankCode && accountNumber ? (
+            <dl className="payment-account-details">
+              <div><dt>Ngân hàng</dt><dd>{bankCode}</dd></div>
+              <div><dt>Số tài khoản</dt><dd>{accountNumber}</dd></div>
+              <div><dt>Chủ tài khoản</dt><dd>{accountName || 'Vui lòng xác nhận với cửa hàng'}</dd></div>
+              {bankBranch && <div><dt>Chi nhánh</dt><dd>{bankBranch}</dd></div>}
+              <div><dt>Nội dung chuyển khoản</dt><dd>{transferContent}</dd></div>
+            </dl>
+          ) : (
+            <p className="payment-config-warning" role="status"><strong>Chưa có thông tin tài khoản nhận tiền.</strong> Vui lòng liên hệ cửa hàng để xác nhận tài khoản trước khi chuyển khoản.</p>
+          )}
+        </>
+      ) : (
+        <p>Vui lòng mở ứng dụng ví điện tử và liên hệ cửa hàng để nhận thông tin thanh toán. Đơn hàng chưa được đánh dấu đã thanh toán.</p>
+      )}
+          <p className="payment-transfer-note">Nội dung chuyển khoản: <strong>{transferContent}</strong>. Cửa hàng sẽ xác nhận đơn sau khi đối soát.</p>
+        </div>
+
+        <div className="payment-customer-panel">
+          <h2>Thông tin người nhận hàng</h2>
+          <dl className="payment-customer-details">
+            <div><dt>Họ và tên</dt><dd>{customer.name || '—'}</dd></div>
+            <div><dt>Số điện thoại</dt><dd>{customer.phone || '—'}</dd></div>
+            <div><dt>Địa chỉ giao hàng</dt><dd>{customer.address || order.shippingAddress || '—'}</dd></div>
+          </dl>
+          <p>Vui lòng kiểm tra thông tin nhận hàng. Nếu cần điều chỉnh, hãy liên hệ cửa hàng và cung cấp mã đơn #{order.id}.</p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function readBuyNowItem() {
+  try {
+    const raw = sessionStorage.getItem('fashion:buyNowCheckout')
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
