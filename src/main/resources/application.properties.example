@@ -1,0 +1,109 @@
+﻿spring.application.name=fashion
+fashion.tax.vat-rate=${FASHION_VAT_RATE:0.08}
+spring.config.import=optional:file:.env[.properties]
+fashion.groq.api-key=${GROQ_API_KEY:}
+fashion.groq.model=${GROQ_MODEL:llama-3.3-70b-versatile}
+fashion.admin.password=${FASHION_ADMIN_PASSWORD}
+fashion.customer.password=${FASHION_CUSTOMER_PASSWORD}
+fashion.jwt.secret=${FASHION_JWT_SECRET}
+fashion.jwt.expiration-ms=${FASHION_JWT_EXPIRATION_MS:86400000}
+
+# Email OTP (configure with an SMTP app password; never commit credentials)
+spring.mail.host=${MAIL_HOST:smtp.gmail.com}
+spring.mail.port=${MAIL_PORT:587}
+spring.mail.username=${MAIL_USERNAME:}
+spring.mail.password=${MAIL_PASSWORD:}
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+
+# PostgreSQL Database Configuration
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5432/fashion}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:fashion}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# JPA / Hibernate
+spring.jpa.hibernate.ddl-auto=validate
+spring.sql.init.mode=always
+spring.sql.init.schema-locations=classpath:base-schema.sql,classpath:review-migration.sql,classpath:shipping-migration.sql,classpath:order-completion-migration.sql,classpath:product-size-chart-migration.sql,classpath:campaign-event-migration.sql,classpath:auth-otp-migration.sql,classpath:return-request-migration.sql,classpath:vat-migration.sql
+spring.sql.init.separator=@@
+spring.jpa.open-in-view=false
+spring.jpa.show-sql=${SPRING_JPA_SHOW_SQL:false}
+spring.jpa.properties.hibernate.format_sql=${SPRING_JPA_FORMAT_SQL:false}
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+# Connection Pool
+spring.datasource.hikari.maximum-pool-size=10
+spring.datasource.hikari.minimum-idle=2
+spring.datasource.hikari.connection-timeout=5000
+spring.datasource.hikari.validation-timeout=3000
+spring.datasource.hikari.max-lifetime=1500000
+spring.datasource.hikari.keepalive-time=300000
+
+# Elasticsearch Configuration
+spring.elasticsearch.uris=http://localhost:9200
+
+# Local cache keeps requests available when Redis is unavailable. This app runs
+# as a single instance and uses the cache only for its small category catalog.
+spring.data.redis.host=localhost
+spring.data.redis.port=6379
+spring.cache.type=simple
+
+# RabbitMQ events
+spring.rabbitmq.host=localhost
+spring.rabbitmq.port=5672
+spring.rabbitmq.username=${RABBITMQ_USERNAME}
+spring.rabbitmq.password=${RABBITMQ_PASSWORD}
+spring.rabbitmq.publisher-confirm-type=correlated
+spring.rabbitmq.publisher-returns=true
+spring.rabbitmq.listener.simple.default-requeue-rejected=false
+spring.rabbitmq.listener.simple.prefetch=10
+
+# Server config
+server.port=${PORT:8081}
+server.shutdown=graceful
+spring.lifecycle.timeout-per-shutdown-phase=20s
+server.tomcat.threads.max=${SERVER_TOMCAT_MAX_THREADS:32}
+server.tomcat.threads.min-spare=8
+server.tomcat.max-connections=120
+server.tomcat.accept-count=60
+server.tomcat.connection-timeout=5s
+server.tomcat.keep-alive-timeout=15s
+
+# Optional visual search. Keep disabled until a CLIP service and indexed embeddings are available.
+fashion.visual-search.enabled=false
+fashion.visual-search.clip-url=http://localhost:8000/embed
+spring.servlet.multipart.max-file-size=20MB
+spring.servlet.multipart.max-request-size=100MB
+fashion.upload.directory=${FASHION_UPLOAD_DIRECTORY:uploads}
+fashion.events.zone-id=${FASHION_EVENTS_ZONE:Asia/Ho_Chi_Minh}
+
+# =========================
+# VNPAY SANDBOX
+# =========================
+
+# Cá»•ng thanh toĂ¡n cá»§a VNPay
+vnpay.pay-url=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+
+# ThĂ´ng tin Merchant Sandbox
+vnpay.tmn-code=${VNPAY_TMN_CODE}
+vnpay.hash-secret=${VNPAY_HASH_SECRET}
+
+# Optional explicit public URLs. When blank, use the host/protocol forwarded by the frontend proxy.
+vnpay.public-base-url=${VNPAY_PUBLIC_BASE_URL:}
+vnpay.return-url=${VNPAY_RETURN_URL:}
+
+# After backend processes the VNPay callback, return to the public frontend.
+vnpay.frontend-return-url=${VNPAY_FRONTEND_RETURN_URL:}
+
+# API query/refund cá»§a VNPay Sandbox
+vnpay.api-url=https://sandbox.vnpayment.vn/merchant_webapi/api/transaction
+
+# Map services for a single-instance demo; use your own/hosted providers for production.
+fashion.maps.geocoding-provider=${GEOCODING_PROVIDER:photon}
+fashion.maps.geocoding-url=${GEOCODING_URL:https://photon.komoot.io}
+fashion.maps.routing-url=${ROUTING_URL:https://router.project-osrm.org}
+fashion.maps.user-agent=${MAPS_USER_AGENT:FashionShopDemo/1.0}
+fashion.shipping.simulator.enabled=${SHIPPING_SIMULATOR_ENABLED:true}
+fashion.shipping.simulator.interval-ms=5000
+
